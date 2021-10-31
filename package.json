@@ -1,0 +1,24 @@
+{
+  "name": "nft-market",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yinwhe/NFT-Market.git"
+  },
+  "author": "Yinwhe",
+  "bugs": {
+    "url": "https://github.com/Yinwhe/NFT-Market/issues"
+  },
+  "homepage": "https://github.com/Yinwhe/NFT-Market#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2"
+  }
+}
