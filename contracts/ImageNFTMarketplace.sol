@@ -5,30 +5,27 @@ import "./ImageNFT.sol";
 import "./ImageNFTAuction.sol";
 
 contract ImageMarketplace is ImageAuction {
-    address public IMAGE_NFT_MARKETPLACE;
+    address internal IMAGE_NFT_MARKETPLACE;
 
-    address[] public imageAddresses;
-
-    constructor(ImageNFT _imageNFT) ImageAuction(_imageNFT) {
+    constructor() {
         IMAGE_NFT_MARKETPLACE = payable(address(this));
     }
 
     function mintImageNFT(
         string memory imageName,
-        uint256 imagePrice,
         string memory ipfsHashOfPhoto
     ) public returns (bool) {
         string memory tokenURI = getTokenURI(ipfsHashOfPhoto); /// [Note]: IPFS hash + URL
-        imageNFT.mint(msg.sender, imageName, tokenURI, imagePrice);
+        mint(msg.sender, imageName, tokenURI);
         return true;
     }
 
-    function baseTokenURI() public pure returns (string memory) {
+    function baseTokenURI() internal pure returns (string memory) {
         return "https://ipfs.io/ipfs/";
     }
 
     function getTokenURI(string memory _ipfsHashOfPhoto)
-        public
+        internal
         pure
         returns (string memory)
     {

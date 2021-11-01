@@ -3,36 +3,38 @@ pragma solidity ^0.8.0;
 
 import "./ImageNFT.sol";
 
-contract ImageAuction {
-    ImageNFT public imageNFT;
-
+contract ImageAuction is ImageNFT {
     struct Auction {
         uint256 imageID;
         uint256 startBid;
         uint256 highestBid;
-        address payable seller;
         address payable winner;
         uint256 endTime;
         bool ended;
         bool claimed;
     }
 
-    mapping(uint256 => Auction) public auctions;
-    mapping(uint256 => mapping(address => uint256)) public bidInfo;
+    mapping(uint256 => Auction) internal auctions;
+    mapping(uint256 => mapping(address => uint256)) internal bidInfo;
 
     uint256 currentAuctionID;
 
-    constructor(ImageNFT _image) {
-        imageNFT = _image;
+    constructor() {
         currentAuctionID = 0;
+    }
+
+    modifier notOnBid(uint256 _tokenID) {
+        require(!imageStorage[_tokenID].onBid, "Already on auction.");
+        _;
     }
 
     function beginAuction(
         uint256 _tokenID,
         uint256 _minBid,
         uint256 _duration
-    ) public returns (bool success) {
-        imageNFT.updateStatus(_tokenID, true);
+    ) public notOnBid(_tokenID) returns (bool success) {
+        updateStatus(_tokenID, true);
+        updatePrice(_tokenID, _minBid);
 
         currentAuctionID++;
         uint256 _endTime = block.timestamp + _duration;
@@ -42,13 +44,12 @@ contract ImageAuction {
             _minBid,
             _minBid,
             payable(msg.sender),
-            payable(msg.sender),
             _endTime,
             false,
             false
         );
 
-        imageNFT.approve(address(this), _tokenID);
+        approve(address(this), _tokenID);
         auctions[currentAuctionID] = newAuction;
         return true;
     }
@@ -58,13 +59,10 @@ contract ImageAuction {
         returns (bool success)
     {
         Auction storage auction = auctions[auctionID];
-        require(
-            block.timestamp < auction.endTime,
-            "Auction already yet ended."
-        );
-        require(newBid > auction.highestBid);
+        require(!auction.ended, "Auction already ended.");
+        require(newBid > auction.highestBid, "Lower bid, kidding.");
 
-        imageNFT.updatePrice(auction.imageID, newBid);
+        updatePrice(auction.imageID, newBid);
 
         auction.winner = payable(msg.sender);
         auction.highestBid = newBid;
@@ -75,13 +73,22 @@ contract ImageAuction {
 
     function endAuction(uint256 auctionID) public returns (bool success) {
         Auction storage auction = auctions[auctionID];
-        require(block.timestamp >= auction.endTime, "Auction not yet ended.");
+        require(block.timestamp >= auction.endTime, "Not end time.");
 
         auction.ended = true;
         return true;
     }
 
-    function claim(uint256 auctionID) public {
-        
+    function claim(uint256 auctionID) public payable {
+        Auction storage auction = auctions[auctionID];
+
+        require(auction.ended, "Auction not ended yet.");
+        require(!auction.claimed, "Auction already claimed.");
+        require(auction.winner == msg.sender, "Can only be claimed by winner.");
+        require(msg.value >= auction.highestBid, "ETH not enough.");
+
+        address owner = ownerOf(auction.imageID);
+        payable(owner).transfer(auction.highestBid);
+        updateOwner(auction.imageID, msg.sender);
     }
 }

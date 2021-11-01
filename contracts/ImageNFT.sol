@@ -11,35 +11,34 @@ contract ImageNFT is ERC721URIStorage {
         address payable mintedBy;
         address payable currentOwner;
         address payable previousOwner;
-        uint256 price;
+        uint256 highestBidPrice;
         uint256 transNum;
-        bool onSale;
+        bool onBid;
     }
 
     uint256 currentImageID;
 
-    mapping(uint256 => Image) public imageStorage;
+    mapping(uint256 => Image) internal imageStorage;
 
-    mapping(string => bool) public tokenURIExists;
+    mapping(string => bool) internal tokenURIExists;
+
+    modifier byOwner(uint256 _tokenID) {
+        require(msg.sender == ownerOf(_tokenID), "Only owner can do this.");
+        _;
+    }
 
     constructor() ERC721("Image Collection", "NFT") {
         currentImageID = 0;
     }
 
-    modifier byOwner(uint256 _tokenID) {
-        require(msg.sender == ownerOf(_tokenID), "Can only be call by owner");
-        _;
-    }
-
     function mint(
         address to,
         string memory _name,
-        string memory _tokenURI,
-        uint256 _price
-    ) public {
+        string memory _tokenURI
+    ) internal returns (uint256) {
         currentImageID++;
-        require(!_exists(currentImageID));
-        require(!tokenURIExists[_tokenURI]);
+        require(!_exists(currentImageID), "ImageID repeated.");
+        require(!tokenURIExists[_tokenURI], "Token URI repeated.");
 
         _safeMint(to, currentImageID);
         _setTokenURI(currentImageID, _tokenURI);
@@ -52,19 +51,19 @@ contract ImageNFT is ERC721URIStorage {
             payable(msg.sender),
             payable(msg.sender),
             payable(address(0)),
-            _price,
+            0,
             0,
             false
         );
 
-        // make passed token URI as exists
         tokenURIExists[_tokenURI] = true;
-        // Store the image into the disk
         imageStorage[currentImageID] = newImage;
+
+        return currentImageID;
     }
 
     function getImageByIndex(uint256 index)
-        public
+        internal
         view
         returns (Image memory image)
     {
@@ -72,22 +71,40 @@ contract ImageNFT is ERC721URIStorage {
         return imageStorage[index];
     }
 
-    function updateStatus(uint256 _tokenID, bool onSale)
-        public
+    function updateStatus(uint256 _tokenID, bool onBid)
+        internal
         byOwner(_tokenID)
         returns (bool)
     {
         Image storage image = imageStorage[_tokenID];
-        image.onSale = onSale;
+        image.onBid = onBid;
+        return true;
+    }
+
+    function updateOwner(uint256 _tokenID, address newOwner)
+        internal
+        byOwner(_tokenID)
+        returns (bool)
+    {
+        Image storage image = imageStorage[_tokenID];
+        image.previousOwner = image.currentOwner;
+        image.currentOwner = payable(newOwner);
+        image.transNum += 1;
+
+        safeTransferFrom(ownerOf(_tokenID), newOwner, _tokenID);
         return true;
     }
 
     function updatePrice(uint256 _tokenID, uint256 newPrice)
-        public
+        internal
+        byOwner(_tokenID)
         returns (bool)
     {
         Image storage image = imageStorage[_tokenID];
-        image.price = newPrice;
-        return true;
+        if (image.highestBidPrice < newPrice) {
+            image.highestBidPrice = newPrice;
+            return true;
+        }
+        return false;
     }
 }
