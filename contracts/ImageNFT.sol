@@ -8,9 +8,9 @@ contract ImageNFT is ERC721URIStorage {
         uint256 tokenID;
         string tokenName;
         string tokenURI;
-        address mintedBy;
-        address currentOwner;
-        address previousOwner;
+        address payable mintedBy;
+        address payable currentOwner;
+        address payable previousOwner;
         uint256 price;
         uint256 transNum;
         bool onSale;
@@ -18,7 +18,7 @@ contract ImageNFT is ERC721URIStorage {
 
     uint256 currentImageID;
 
-    Image[] public imageStorage;
+    mapping(uint256 => Image) public imageStorage;
 
     mapping(string => bool) public tokenURIExists;
 
@@ -32,6 +32,7 @@ contract ImageNFT is ERC721URIStorage {
     }
 
     function mint(
+        address to,
         string memory _name,
         string memory _tokenURI,
         uint256 _price
@@ -40,7 +41,7 @@ contract ImageNFT is ERC721URIStorage {
         require(!_exists(currentImageID));
         require(!tokenURIExists[_tokenURI]);
 
-        _safeMint(msg.sender, currentImageID);
+        _safeMint(to, currentImageID);
         _setTokenURI(currentImageID, _tokenURI);
 
         // creat a new NFT (struct) and pass in new values
@@ -69,10 +70,6 @@ contract ImageNFT is ERC721URIStorage {
     {
         require(_exists(index), "index not exist");
         return imageStorage[index];
-    }
-
-    function getAllImages() public view returns (Image[] memory images) {
-        return imageStorage;
     }
 
     function updateStatus(uint256 _tokenID, bool onSale)

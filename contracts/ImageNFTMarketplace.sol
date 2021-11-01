@@ -19,7 +19,7 @@ contract ImageMarketplace is ImageAuction {
         string memory ipfsHashOfPhoto
     ) public returns (bool) {
         string memory tokenURI = getTokenURI(ipfsHashOfPhoto); /// [Note]: IPFS hash + URL
-        imageNFT.mint(imageName, tokenURI, imagePrice);
+        imageNFT.mint(msg.sender, imageName, tokenURI, imagePrice);
         return true;
     }
 

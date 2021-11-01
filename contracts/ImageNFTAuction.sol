@@ -58,6 +58,10 @@ contract ImageAuction {
         returns (bool success)
     {
         Auction storage auction = auctions[auctionID];
+        require(
+            block.timestamp < auction.endTime,
+            "Auction already yet ended."
+        );
         require(newBid > auction.highestBid);
 
         imageNFT.updatePrice(auction.imageID, newBid);
@@ -69,10 +73,7 @@ contract ImageAuction {
         return true;
     }
 
-    function endAuction(uint256 auctionID)
-        public
-        returns (bool success)
-    {
+    function endAuction(uint256 auctionID) public returns (bool success) {
         Auction storage auction = auctions[auctionID];
         require(block.timestamp >= auction.endTime, "Auction not yet ended.");
 
