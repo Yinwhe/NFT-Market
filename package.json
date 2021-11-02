@@ -11,7 +11,8 @@
     "react-scripts": "4.0.3",
     "web-vitals": "^1.0.1",
     "@openzeppelin/contracts": "^4.3.2",
-    "web3": "^1.6.0"
+    "web3": "^1.6.0",
+    "rsuite": "^5.1.0"
   },
   "scripts": {
     "start": "react-scripts start",
