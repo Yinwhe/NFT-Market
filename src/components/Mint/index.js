@@ -1,18 +1,15 @@
 import React, { Component } from "react";
-import getWeb3, { getGanacheWeb3, getGanacheAddresses } from "../../utils/getWeb3";
-
-import { Grid } from '@material-ui/core';
-import { Loader, Button, Card, Input, Heading, Table, Form, Field } from 'rimble-ui';
-import { zeppelinSolidityHotLoaderOptions } from '../../../config/webpack';
-
+import { Button, Card, Box, Input, TextField } from '@mui/material';
 import styles from '../../App.module.scss';
+import { create } from 'ipfs-http-client';
+import { display } from "@mui/system";
 
-const IPFS = require('ipfs-api');
-const ipfs = new IPFS({
-	host: 'ipfs.infura.io',
+const ipfs = create({
+	host: "ipfs.infura.io",
 	port: 5001,
-	protocol: 'https'
+	protocol: "https",
 });
+
 
 export default class Mint extends Component {
 	constructor(props) {
@@ -43,7 +40,7 @@ export default class Mint extends Component {
 	onSubmit(event) {
 		event.preventDefault()
 
-		ipfs.files.add(this.state.buffer, (error, result) => {
+		ipfs.add(this.state.buffer, (error, result) => {
 			// In case of fail to upload to IPFS
 			if (error) {
 				console.error(error)
@@ -54,7 +51,11 @@ export default class Mint extends Component {
 			this.setState({ ipfsHash: result[0].hash });
 			console.log('=== ipfsHash ===', this.state.ipfsHash);
 
-			this.NFTContract.methods.mintImageNFT(nftName, this.state.ipfsHash).send({ from: accounts[0] });
+			let tokenURI = `https://ipfs.infura.io/ipfs/${this.state.ipfsHash}`;
+			this.setState({ tokenURI });
+			console.log('=== tokenURI ===', tokenURI);
+
+			// this.NFTContract.methods.mintImageNFT(this.state.NFTName, this.state.ipfsHash).send({ from: accounts[0] });
 			// .once('receipt', (receipt) => {
 			// 	console.log('=== receipt ===', receipt);
 
@@ -82,50 +83,44 @@ export default class Mint extends Component {
 
 	render() {
 		return (
-			<div className={styles.left}>
-				<Grid container style={{ marginTop: 20 }}>
-					<Grid item xs={10}>
-						<Card width={"420px"}
-							maxWidth={"420px"}
-							mx={"auto"}
-							my={5}
-							p={20}
-							borderColor={"#E8E8E8"}
-						>
-							<h2>Publish and Put on Sale</h2>
-							<p>Please upload your photo and put on sale from here!</p>
-
-							<Form onSubmit={this.onSubmit}>
-								<Field label="Image NFT Name">
-									<Input
-										type="text"
-										width={1}
-										placeholder="Give Your NFT a Name"
-										required={true}
-										value={this.state.NFTName}
-										onChange={(e) => this.setState({ NFTName: e.target.value })}
-									/>
-								</Field>
-
-								<Field label="Upload Image to IPFS">
-									<input
-										type='file'
-										onChange={this.captureFile}
-										required={true}
-									/>
-								</Field>
-
-								<Button size={'medium'} width={1} type='submit'>Upload my photo and put on sale</Button>
-							</Form>
-						</Card>
-					</Grid>
-
-					<Grid item xs={1}>
-					</Grid>
-
-					<Grid item xs={1}>
-					</Grid>
-				</Grid>
+			<div>
+				<br/><br/><br/>
+				<Card>
+					<br/>
+					<div className="jumbotron">
+						<h1 className="display-5">Mint Your NFT</h1>
+					</div>
+					<form onSubmit={this.onSubmit}>
+						<Box>
+							<TextField
+								required
+								type="text"
+								value={this.state.NFTName}
+								label="NFT's Name"
+								sx={{ m: 4, width: '30ch' }}
+								onChange={(e) =>
+									this.setState({ NFTName: e.target.value })
+								}
+							/>
+						</Box>
+						<Box>
+							<TextField
+								required
+								accept="image/*"
+								type="file"
+								sx={{ m: 4, width: '30ch' }}
+								onChange={this.captureFile} />
+						</Box>
+						<Box>
+							<Button
+								variant="contained"
+								sx={{ m: 1, width: '30ch' }}
+								type='submit'>
+								Mint It!
+							</Button>
+						</Box>
+					</form>
+				</Card>
 			</div>
 		);
 	}
