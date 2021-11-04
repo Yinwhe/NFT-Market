@@ -14,7 +14,7 @@ contract ImageMarketplace is ImageAuction {
     function mintImageNFT(
         string memory imageName,
         string memory ipfsHashOfPhoto
-    ) public returns (bool) {
+    ) external returns (bool) {
         string memory tokenURI = getTokenURI(ipfsHashOfPhoto); /// [Note]: IPFS hash + URL
         mint(msg.sender, imageName, tokenURI);
         return true;

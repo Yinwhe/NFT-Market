@@ -16,9 +16,9 @@ contract ImageNFT is ERC721URIStorage {
         bool onBid;
     }
 
-    uint256 currentImageID;
+    uint256 public currentImageCount;
 
-    mapping(uint256 => Image) internal imageStorage;
+    mapping(uint256 => Image) public imageStorage;
 
     mapping(string => bool) internal tokenURIExists;
 
@@ -28,7 +28,7 @@ contract ImageNFT is ERC721URIStorage {
     }
 
     constructor() ERC721("Image Collection", "NFT") {
-        currentImageID = 0;
+        currentImageCount = 0;
     }
 
     function mint(
@@ -36,16 +36,16 @@ contract ImageNFT is ERC721URIStorage {
         string memory _name,
         string memory _tokenURI
     ) internal returns (uint256) {
-        currentImageID++;
-        require(!_exists(currentImageID), "ImageID repeated.");
+        currentImageCount++;
+        require(!_exists(currentImageCount), "ImageID repeated.");
         require(!tokenURIExists[_tokenURI], "Token URI repeated.");
 
-        _safeMint(to, currentImageID);
-        _setTokenURI(currentImageID, _tokenURI);
+        _safeMint(to, currentImageCount);
+        _setTokenURI(currentImageCount, _tokenURI);
 
         // creat a new NFT (struct) and pass in new values
         Image memory newImage = Image(
-            currentImageID,
+            currentImageCount,
             _name,
             _tokenURI,
             payable(msg.sender),
@@ -57,9 +57,9 @@ contract ImageNFT is ERC721URIStorage {
         );
 
         tokenURIExists[_tokenURI] = true;
-        imageStorage[currentImageID] = newImage;
+        imageStorage[currentImageCount] = newImage;
 
-        return currentImageID;
+        return currentImageCount;
     }
 
     function getImageByIndex(uint256 index)
@@ -106,5 +106,27 @@ contract ImageNFT is ERC721URIStorage {
             return true;
         }
         return false;
+    }
+
+    // Following functions are for external use
+    function getCurrentTime() external view returns (uint256) {
+        return block.timestamp;
+    }
+
+    function getTokenOnwer(uint256 _tokenID) external view returns (address) {
+        return ownerOf(_tokenID);
+    }
+
+    function getTokenURI(uint256 _tokenID)
+        external
+        view
+        returns (string memory)
+    {
+        Image memory image = imageStorage[_tokenID];
+        return image.tokenURI;
+    }
+
+    function getOwnedNumber(address owner) external view returns (uint256) {
+        return balanceOf(owner);
     }
 }

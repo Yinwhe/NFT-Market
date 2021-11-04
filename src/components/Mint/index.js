@@ -1,30 +1,28 @@
 import React, { Component } from "react";
-import { Button, Card, Box, Input, TextField } from '@mui/material';
-import styles from '../../App.module.scss';
-import { create } from 'ipfs-http-client';
-import { display } from "@mui/system";
+import { Button, Card, Box, TextField } from '@mui/material';
 
-const ipfs = create({
-	host: "ipfs.infura.io",
+const IPFS = require('ipfs-api');
+const ipfs = new IPFS({
+	host: 'ipfs.infura.io',
 	port: 5001,
-	protocol: "https",
+	protocol: 'https'
 });
-
 
 export default class Mint extends Component {
 	constructor(props) {
 		super(props);
 		this.state = {
 			NFTName: "",
-			tokenURI: '',
+			tokenURI: "",
+			ipfsHash: "",
 			buffer: null,  // Data to be sent to ipfs
 		}
 	}
 
 	///--------------------------
-	/// Functions of ipfsUpload 
+	/// Functions of ipfsUpload
 	///-------------------------- 
-	captureFile(event) {
+	captureFile = (event) => {
 		event.preventDefault()
 		let file = event.target.files[0]
 		let reader = new window.FileReader()
@@ -37,10 +35,11 @@ export default class Mint extends Component {
 		}
 	}
 
-	onSubmit(event) {
-		event.preventDefault()
+	onSubmit = async (event) => {
+		event.preventDefault();
+		console.log("Test");
 
-		ipfs.add(this.state.buffer, (error, result) => {
+		await ipfs.files.add(this.state.buffer, (error, result) => {
 			// In case of fail to upload to IPFS
 			if (error) {
 				console.error(error)
@@ -55,38 +54,17 @@ export default class Mint extends Component {
 			this.setState({ tokenURI });
 			console.log('=== tokenURI ===', tokenURI);
 
-			// this.NFTContract.methods.mintImageNFT(this.state.NFTName, this.state.ipfsHash).send({ from: accounts[0] });
-			// .once('receipt', (receipt) => {
-			// 	console.log('=== receipt ===', receipt);
-
-			// 	const PHOTO_NFT = receipt.events.PhotoNFTCreated.returnValues.photoNFT;
-			// 	console.log('=== PHOTO_NFT ===', PHOTO_NFT);
-
-			// 	/// Get instance by using created photoNFT address
-			// 	let PhotoNFT = {};
-			// 	PhotoNFT = require("../../../../build/contracts/PhotoNFT.json");
-			// 	let photoNFT = new web3.eth.Contract(PhotoNFT.abi, PHOTO_NFT);
-			// 	console.log('=== photoNFT ===', photoNFT);
-
-			// 	/// Check owner of photoId==1
-			// 	const photoId = 1;  /// [Note]: PhotoID is always 1. Because each photoNFT is unique.
-			// 	photoNFT.methods.ownerOf(photoId).call().then(owner => console.log('=== owner of photoId 1 ===', owner));
-
-			// 	/// [Note]: Promise (nested-structure) is needed for executing those methods below (Or, rewrite by async/await)
-			// 	photoNFT.methods.approve(PHOTO_NFT_MARKETPLACE, photoId).send({ from: accounts[0] }).once('receipt', (receipt) => {
-			// 		/// Put on sale (by a seller who is also called as owner)
-			// 		photoNFTMarketplace.methods.openTradeWhenCreateNewPhotoNFT(PHOTO_NFT, photoId, photoPrice).send({ from: accounts[0] }).once('receipt', (receipt) => { })
-			// 	})
-			// })
+			this.props.Contract.methods.mintImageNFT(this.state.NFTName, this.state.ipfsHash).send({ from: this.props.accountAddress });
+			console.log("=== Mint ===", this.state.NFTName);
 		})
 	}
 
 	render() {
 		return (
 			<div>
-				<br/><br/><br/>
+				<br /><br /><br />
 				<Card>
-					<br/>
+					<br />
 					<div className="jumbotron">
 						<h1 className="display-5">Mint Your NFT</h1>
 					</div>

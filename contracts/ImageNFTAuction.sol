@@ -14,7 +14,7 @@ contract ImageAuction is ImageNFT {
         bool claimed;
     }
 
-    mapping(uint256 => Auction) internal auctions;
+    mapping(uint256 => Auction) public auctions;
     mapping(uint256 => mapping(address => uint256)) internal bidInfo;
 
     uint256 currentAuctionID;
@@ -32,7 +32,7 @@ contract ImageAuction is ImageNFT {
         uint256 _tokenID,
         uint256 _minBid,
         uint256 _duration
-    ) public notOnBid(_tokenID) returns (bool success) {
+    ) external notOnBid(_tokenID) returns (bool success) {
         updateStatus(_tokenID, true);
         updatePrice(_tokenID, _minBid);
 
@@ -55,7 +55,7 @@ contract ImageAuction is ImageNFT {
     }
 
     function bid(uint256 auctionID, uint256 newBid)
-        public
+        external
         returns (bool success)
     {
         Auction storage auction = auctions[auctionID];
@@ -71,7 +71,7 @@ contract ImageAuction is ImageNFT {
         return true;
     }
 
-    function endAuction(uint256 auctionID) public returns (bool success) {
+    function endAuction(uint256 auctionID) external returns (bool success) {
         Auction storage auction = auctions[auctionID];
         require(block.timestamp >= auction.endTime, "Not end time.");
 
@@ -79,7 +79,7 @@ contract ImageAuction is ImageNFT {
         return true;
     }
 
-    function claim(uint256 auctionID) public payable {
+    function claim(uint256 auctionID) external payable {
         Auction storage auction = auctions[auctionID];
 
         require(auction.ended, "Auction not ended yet.");
