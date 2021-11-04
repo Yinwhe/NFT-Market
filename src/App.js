@@ -24,8 +24,8 @@ class App extends Component {
 			lastMintTime: null,
 			Auctions: [],
 			currentTime: null,
-			ready: false
 		};
+		this.setState({ready: false});
 	}
 
 	setupWeb3 = async () => {

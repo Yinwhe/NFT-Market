@@ -18,10 +18,6 @@ export default class ImageCard extends React.Component {
     let toBeClaim = (image.status == 2);
     let isOwner = (this.props.image.currentOwner === this.props.accountAddress);
     let leftTime = auction.endTime - this.props.currentTime;
-    // let leftTime;
-    // if (auction) {
-    //   leftTime = auction.endTime - this.props.currentTime;
-    // }
 
     // console.log("=== Time ===", this.props.Auction.endTime,this.props.currentTime)
 
@@ -104,10 +100,26 @@ export default class ImageCard extends React.Component {
   }
 
   bid = async () => {
+    let tokenID = this.props.tokenID;
+    let auction = this.props.Auction;
+    let newBid = promt("Please input your bid");
 
+    if(newBid <= auction.highestBidPrice) {
+      console.alert("Lower bid? Joking!");
+      return;
+    }
+    await this.props.Contract.methods.bid(tokenID, newBid).send({ from: this.props.accountAddress });
   }
 
   claim = async () => {
+    let tokenID = this.props.tokenID;
+    let auction = this.props.Auction;
 
+    if(this.props.accountAddress != auction.winner) {
+      console.alert("You are not winner!");
+      return;
+    }
+
+    await this.props.Contract.methods.claim(tokenID).send({ from: this.props.accountAddress });
   }
 }
