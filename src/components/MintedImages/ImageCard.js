@@ -1,6 +1,8 @@
 import React from 'react';
-import { Button, Card } from '@mui/material';
-import styles from '../../App.module.scss';
+import {
+  Button, Card, CardContent, CardMedia, Typography, TextField,
+  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle
+} from '@mui/material';
 
 export default class ImageCard extends React.Component {
   constructor(props) {
@@ -8,84 +10,104 @@ export default class ImageCard extends React.Component {
   }
 
   render() {
-    const image = this.props.image;
-    const tokenID = this.props.key;
+    let image = this.props.image;
+    let auction = this.props.Auction;
+    // console.log("=== Test ===", image, auction);
+
+    let onBid = (image.status == 1);
+    let toBeClaim = (image.status == 2);
+    let isOwner = (this.props.image.currentOwner === this.props.accountAddress);
+    let leftTime = auction.endTime - this.props.currentTime;
+    // let leftTime;
+    // if (auction) {
+    //   leftTime = auction.endTime - this.props.currentTime;
+    // }
+
+    // console.log("=== Time ===", this.props.Auction.endTime,this.props.currentTime)
+
     return (
-      <div key={tokenID}>
-        <div className={styles.widgets}>
-
-            <Card sx={{ maxWidth: 345 }}>
-              <img
-                alt="random unsplash image"
-                src={image.tokenURI}
-              />
-
-              <span style={{ padding: "20px" }}></span>
-
-              <p>Image Name: {image.tokenName}</p>
-
-              <p>Highest Auction Price: {window.web3.utils.fromWei(`${image.highestBidPrice}`, 'ether')} ETH</p>
-
-              <p>Minted By: {image.mintedBy}</p>
-
-              <p>Owner: {image.currentOwner}</p>
-
+      <div>
+        <CardMedia
+          component="img"
+          alt="random unsplash image"
+          image={image.tokenURI}
+        />
+        <CardContent>
+          <Typography gutterBottom variant="h5" component="div">
+            Image Name: {image.tokenName}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Highest Auction Price: {window.web3.utils.fromWei(`${image.highestBidPrice}`, 'ether')} ETH
+            <br />
+            Minted By: {image.mintedBy}
+            <br />
+            Owner: {image.currentOwner}
+          </Typography>
+        </CardContent>
+        {onBid || toBeClaim ?
+          // Bid Info here
+          <div>
+            {onBid ?
+              <Typography gutterBottom variant="h5" component="div">
+                On Auction
+              </Typography>
+              : <Typography gutterBottom variant="h5" component="div">
+                To Be Claimed
+              </Typography>
+            }
+            <Typography variant="body2" color="text.secondary">
+              Start Bid: {window.web3.utils.fromWei(`${auction.startBid}`, 'ether')} ETH
               <br />
-
-              {image.onBid == 0 ?
-                <Button size={'medium'} width={1} value={image.photoNFT} onClick={this.putOnBid}> Put on sale </Button>
-                :
-                <Button size={'medium'} width={1} value={image.photoNFT} onClick={this.cancelOnBid}> Cancel on sale </Button>
-              }
-
-              <span style={{ padding: "5px" }}></span>
-            </Card>
-        </div>
+              Current Bid: {window.web3.utils.fromWei(`${auction.highestBid}`, 'ether')} ETH
+              <br />
+              Current Winner: {auction.winner}
+            </Typography>
+          </div>
+          : <div />
+        }
+        {/* For Button */}
+        {image.status == 0 ? // Hard to read I guess
+          <Button onClick={this.putOnBid}> Put on Bid </Button>
+          : image.status == 1 ?
+            leftTime > 0 ?
+              isOwner ?
+                <Button>Your Auction Will End in {leftTime}s</Button>
+                : <Button onClick={this.bid}>Ending in {leftTime}s, Bid Now!!!</Button>
+              : isOwner ?
+                <Button onClick={this.endOnBid}>You Can End It Now</Button>
+                : <Button>Time Up, Waitting for owner to end it.</Button>
+            : <Button onClick={this.claim}>To be claimed</Button>
+        }
+        <span style={{ padding: "5px" }}></span>
       </div>
     )
   }
 
 
   ///---------------------------------------------------------
-  /// Functions put a photo NFT on sale or cancel it on sale 
+  /// Functions put a photo NFT on bid or cancel it 
   ///---------------------------------------------------------
-  putOnBid = async (e) => {
-    // console.log('=== value of putOnBid ===', e.target.value);
-    // console.log('=== IMAGE_NFT_MARKETPLACE ===', IMAGE_NFT_MARKETPLACE);
-
-    // const IMAGE_NFT = e.target.value;
-
-    // /// Check owner of imageID
-    // const imageID = 1;  /// [Note]: imageID is always 1. Because each photoNFT is unique.
-    // const owner = await imageNFT.methods.ownerOf(imageID).call();
-    // console.log('=== owner of imageID ===', owner);  /// [Expect]: Owner should be the imageNFTMarketplace.sol (This also called as a proxy/escrow contract)
+  putOnBid = async () => {
+    let tokenID = this.props.tokenID;
+    console.log("=== tokenID ===", tokenID);
+    let minBid = prompt("Please input minBid");
+    let duration = prompt("Please input duration");
 
     // /// Put on sale (by a seller who is also called as owner)
-    // const txReceipt1 = await imageNFT.methods.approve(IMAGE_NFT_MARKETPLACE, imageID).send({ from: accounts[0] });
-    // const txReceipt2 = await imageNFTMarketplace.methods.openTrade(IMAGE_NFT, imageID).send({ from: accounts[0] });
-    // console.log('=== response of openTrade ===', txReceipt2);
+    await this.props.Contract.methods.beginAuction(tokenID, minBid, duration).send({ from: this.props.accountAddress });
   }
 
-  // cancelOnBid = async (e) => {
-  //     const { web3, accounts, imageNFTMarketplace, imageNFT, IMAGE_NFT_MARKETPLACE } = this.state;
+  endOnBid = async () => {
+    let tokenID = this.props.tokenID;
+    console.log("=== tokenID ===", tokenID);
+    await this.props.Contract.methods.endAuction(tokenID).send({ from: this.props.accountAddress });
+  }
 
-  //     console.log('=== value of cancelOnBid ===', e.target.value);
+  bid = async () => {
 
-  //     const IMAGE_NFT = e.target.value;
+  }
 
-  //     /// Get instance by using created photoNFT address
-  //     let PhotoNFT = {};
-  //     PhotoNFT = require("../../../../build/contracts/PhotoNFT.json"); 
-  //     let photoNFT = new web3.eth.Contract(PhotoNFT.abi, IMAGE_NFT);
+  claim = async () => {
 
-  //     /// Check owner of imageID
-  //     const imageID = 1;  /// [Note]: imageID is always 1. Because each photoNFT is unique.
-  //     const owner = await photoNFT.methods.ownerOf(imageID).call();
-  //     console.log('=== owner of imageID ===', owner);  /// [Expect]: Owner should be the imageNFTMarketplace.sol (This also called as a proxy/escrow contract)
-
-  //     /// Cancel on sale
-  //     //const txReceipt1 = await photoNFT.methods.approve(IMAGE_NFT_MARKETPLACE, imageID).send({ from: accounts[0] });
-  //     const txReceipt2 = await imageNFTMarketplace.methods.cancelTrade(IMAGE_NFT, imageID).send({ from: accounts[0] });
-  //     console.log('=== response of cancelTrade ===', txReceipt2);
-  // }
+  }
 }

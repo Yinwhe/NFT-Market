@@ -1,13 +1,15 @@
 import React, { Component } from "react";
+import { HashRouter, Route } from "react-router-dom";
 import Web3 from "web3"
+
+import Loader from "./components/Loader/index"
 import Header from "./components/Header/index.js";
 import Footer from "./components/Footer/index.js";
 import Home from "./components/Home/index"
 import Mint from "./components/Mint/index.js";
-// import MintedImages from "./components/MintedImages/index.js";
-// import Marketplace from "./components/Marketplace/index.js";
+import MintedImages from "./components/MintedImages/index.js";
+import Marketplace from "./components/Marketplace/index.js";
 import styles from './App.module.scss';
-// import './App.css';
 
 class App extends Component {
 	constructor(props) {
@@ -15,30 +17,22 @@ class App extends Component {
 		this.state = {
 			accountAddress: "",
 			accountBalance: "",
-			NFTContract: null,
-			NFTCount: 0,
-			NFTs: [],
-			NFTNumOfAccount: 0,
-			nameIsUsed: false,
+			Contract: null,
+			ImageCount: 0,
+			Images: [],
+			ImageNumOfAccount: 0,
 			lastMintTime: null,
 			Auctions: [],
 			currentTime: null,
-			route: window.location.pathname.replace("/", "")
+			ready: false
 		};
-	}
-
-	tick = async () => {
-		if (this.state.NFTContract) {
-			let currentTime = await this.state.NFTContract.methods.getTime().call();
-			this.setState({ currentTime });
-		}
 	}
 
 	setupWeb3 = async () => {
 		if (window.ethereum) {
 			window.web3 = new Web3(window.ethereum);
 			// Request account access if needed
-			window.ethereum.enable();
+			window.ethereum.send('eth_requestAccounts')
 		}
 		// Legacy dapp browsers...
 		else if (window.web3) {
@@ -48,12 +42,7 @@ class App extends Component {
 		}
 		// Fallback to localhost; use dev console port by default...
 		else {
-			const FALLBACK_WEB3_PROVIDER = process.env.REACT_APP_NETWORK || 'http://0.0.0.0:8545';
-			const provider = new Web3.providers.HttpProvider(
-				FALLBACK_WEB3_PROVIDER
-			);
-			window.web3 = new Web3(provider);
-			console.log("No web3 instance injected, using Infura/Local web3.");
+			console.alert("No web3 instance injected, using Infura/Local web3.");
 		}
 	}
 
@@ -78,33 +67,36 @@ class App extends Component {
 			console.log("=== balance ===", balance);
 
 			const networkId = await web3.eth.net.getId();
-			let instanceimageNFTMarketplace = null;
+			let NFTMarketplaceInstance = null;
 			let deployedNetwork = null;
 
 			// Create instance of contracts
 			if (ImageNFTMarketplace.networks) {
 				deployedNetwork = ImageNFTMarketplace.networks[networkId];
 				if (deployedNetwork) {
-					instanceimageNFTMarketplace = new web3.eth.Contract(
+					NFTMarketplaceInstance = new web3.eth.Contract(
 						ImageNFTMarketplace.abi,
 						deployedNetwork.address,
 					);
-					console.log('=== instanceimageNFTMarketplace ===', instanceimageNFTMarketplace);
 				}
 			}
 
-			if (instanceimageNFTMarketplace) {
+			if (NFTMarketplaceInstance) {
+				const ImageCount = await NFTMarketplaceInstance.methods.currentImageCount().call();
+				for (let i = 1; i <= ImageCount; i++) {
+					const image = await NFTMarketplaceInstance.methods.imageStorage(i).call();
+					this.setState({ Images: [...this.state.Images, image], });
+					const auction = await NFTMarketplaceInstance.methods.auctions(i).call();
+					this.setState({ Auctions: [...this.state.Auctions, auction], })
+				}
+
+				const ImageNumOfAccount = await NFTMarketplaceInstance.methods.getOwnedNumber(accounts[0]).call();
 				this.setState({
 					accountAddress: accounts[0],
 					accountBalance: balance,
-					NFTContract: instanceimageNFTMarketplace,
-					NFTCount: 0,
-					NFTs: [],
-					NFTNumOfAccount: 0,
-					nameIsUsed: false,
-					lastMintTime: null,
-					Auctions: [],
-					currentTime: null,
+					Contract: NFTMarketplaceInstance,
+					ImageCount: ImageCount,
+					ImageNumOfAccount: ImageNumOfAccount,
 				});
 			}
 			else {
@@ -121,31 +113,39 @@ class App extends Component {
 		}
 	}
 
+	tick = async () => {
+		if (this.state.Contract) {
+			let currentTime = Date.parse(new Date()) / 1000;
+			this.setState({ currentTime });
+		}
+	}
+
 	componentWillMount = async () => {
 		await this.setupWeb3();
 		await this.setupBlockchain();
+		this.setState({ ready: true })
 	}
 
 	componentDidMount = async () => {
-		// this.timerID = setInterval(
-		// 	() => this.tick(),
-		// 	1000
-		// );
+		this.timerID = setInterval(
+			() => this.tick(),
+			1000
+		);
 	};
 
 	componentWillUnmount() {
 		clearInterval(this.timerID);
 	}
 
-	// renderLoader() {
-	// 	return (
-	// 		<div className={styles.loader}>
-	// 			<Loader size="80px" color="red" />
-	// 			<h3> Loading Web3, accounts, and contract...</h3>
-	// 			<p> Unlock your metamask </p>
-	// 		</div>
-	// 	);
-	// }
+	renderLoader() {
+		return (
+			<div className={styles.loader}>
+				<Loader size="80px" color="red" />
+				<h3> Loading Web3, accounts, and contract...</h3>
+				<p> Unlock your metamask </p>
+			</div>
+		);
+	}
 
 	renderDeployCheck(instructionsKey) {
 		return (
@@ -161,7 +161,7 @@ class App extends Component {
 		);
 	}
 
-	renderHome() {
+	renderHome = () => {
 		return (
 			<div className={styles.wrapper}>
 				<Home
@@ -172,40 +172,63 @@ class App extends Component {
 		);
 	}
 
-	renderMint() {
+	renderMint = () => {
 		return (
 			<div className={styles.wrapper}>
-				<Mint />
+				<Mint
+					accountAddress={this.state.accountAddress}
+					Contract={this.state.Contract}
+				/>
 			</div>
 		);
 	}
 
-	// renderMintedImages() {
-	// 	return (
-	// 		<div className={styles.wrapper}>
-	// 			<MintedImages />
-	// 		</div>
-	// 	);
-	// }
+	renderMintedImages = () => {
+		return (
+			<div className={styles.wrapper}>
+				<MintedImages
+					accountAddress={this.state.accountAddress}
+					Images={this.state.Images}
+					ImageNumOfAccount={this.state.ImageNumOfAccount}
+					Contract={this.state.Contract}
+					Auctions={this.state.Auctions}
+					currentTime={this.state.currentTime}
+				/>
+			</div>
+		);
+	}
 
-	// renderMarketPlace() {
-	// 	return (
-	// 		<div className={styles.wrapper}>
-	// 			<Marketplace />
-	// 		</div>
-	// 	);
-	// }
+	renderMarketplace = () => {
+		return (
+			<div className={styles.wrapper}>
+				<Marketplace
+					accountAddress={this.state.accountAddress}
+					Images={this.state.Images}
+					Contract={this.state.Contract}
+					Auctions={this.state.Auctions}
+					currentTime={this.state.currentTime}
+				/>
+			</div>
+		);
+	}
 
 	render() {
-		console.log("route", this.state.route);
+		console.log("Ready", this.ready);
 		return (
-			<div className={styles.App}>
-				<Header />
-				{this.state.route === '' && this.renderHome()}
-				{this.state.route === 'mint' && this.renderMint()}
-				{/* {this.state.route === 'minted-images' && this.renderMintedImages()}
-				{this.state.route === 'marketplace' && this.renderMarketPlace()} */}
-				<Footer />
+			<div>
+				{!this.ready ?
+					<Loader />
+					: (
+						<HashRouter basename="/">
+							<Header />
+							<Route path="/" exact render={this.renderHome} />
+							<Route path="/mint" exact render={this.renderMint} />
+							<Route path="/minted-images" exact render={this.renderMintedImages} />
+							<Route path="/marketplace" exact render={this.renderMarketplace} />
+							<Footer />
+						</HashRouter>
+					)
+				}
 			</div>
 		);
 	}

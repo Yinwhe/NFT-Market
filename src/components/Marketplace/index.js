@@ -1,6 +1,6 @@
-import React from "react";
-import ImageCard from "./ImageCard"
-import { Typography, Grid, Box, Paper, styled } from '@mui/material';
+import React, { useState, useEffect } from "react";
+import { Typography, Grid, Paper, styled } from '@mui/material';
+import ImageCard from "../MintedImages/ImageCard";
 
 const Item = styled(Paper)(({ theme }) => ({
   ...theme.typography.body2,
@@ -9,25 +9,26 @@ const Item = styled(Paper)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
-const MintedImages = ({
+const Marketplace = ({
   accountAddress,
   Images,
-  ImageNumOfAccount,
   Contract,
   Auctions,
   currentTime,
 }) => {
-  const myImages = Images.filter(
-    (image) => image.currentOwner === accountAddress
+  const allImages = Images.filter(
+    (image) => image.status != 0
   );
+  let ImageCount = allImages.length;
   return (
     <div>
       <br />
       <Typography gutterBottom variant="h4">
-        Total number of NFTs You Own : {ImageNumOfAccount}
+        Total number of Images in the Marketplace : {ImageCount}
       </Typography>
       <Grid container spacing={2}>
-        {myImages.map((image) => {
+        {allImages.map((image) => {
+          console.log("=== Test ===", image, Auctions[parseInt(image.tokenID) - 1])
           return (
             <Grid item xs key={image.tokenID}>
               <Item>
@@ -48,4 +49,4 @@ const MintedImages = ({
   );
 };
 
-export default MintedImages;
+export default Marketplace;

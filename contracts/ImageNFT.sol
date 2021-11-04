@@ -4,6 +4,10 @@ pragma solidity ^0.8.0;
 import "../node_modules/@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 contract ImageNFT is ERC721URIStorage {
+    enum Status {
+        OffBid, OnBid, WaittingClaim
+    }
+
     struct Image {
         uint256 tokenID;
         string tokenName;
@@ -13,7 +17,7 @@ contract ImageNFT is ERC721URIStorage {
         address payable previousOwner;
         uint256 highestBidPrice;
         uint256 transNum;
-        bool onBid;
+        Status status;
     }
 
     uint256 public currentImageCount;
@@ -21,11 +25,6 @@ contract ImageNFT is ERC721URIStorage {
     mapping(uint256 => Image) public imageStorage;
 
     mapping(string => bool) internal tokenURIExists;
-
-    modifier byOwner(uint256 _tokenID) {
-        require(msg.sender == ownerOf(_tokenID), "Only owner can do this.");
-        _;
-    }
 
     constructor() ERC721("Image Collection", "NFT") {
         currentImageCount = 0;
@@ -53,7 +52,7 @@ contract ImageNFT is ERC721URIStorage {
             payable(address(0)),
             0,
             0,
-            false
+            Status.OffBid
         );
 
         tokenURIExists[_tokenURI] = true;
@@ -71,19 +70,17 @@ contract ImageNFT is ERC721URIStorage {
         return imageStorage[index];
     }
 
-    function updateStatus(uint256 _tokenID, bool onBid)
+    function updateStatus(uint256 _tokenID, Status status)
         internal
-        byOwner(_tokenID)
         returns (bool)
     {
         Image storage image = imageStorage[_tokenID];
-        image.onBid = onBid;
+        image.status = status;
         return true;
     }
 
     function updateOwner(uint256 _tokenID, address newOwner)
         internal
-        byOwner(_tokenID)
         returns (bool)
     {
         Image storage image = imageStorage[_tokenID];
@@ -91,13 +88,12 @@ contract ImageNFT is ERC721URIStorage {
         image.currentOwner = payable(newOwner);
         image.transNum += 1;
 
-        safeTransferFrom(ownerOf(_tokenID), newOwner, _tokenID);
+        _transfer(ownerOf(_tokenID), newOwner, _tokenID);
         return true;
     }
 
     function updatePrice(uint256 _tokenID, uint256 newPrice)
         internal
-        byOwner(_tokenID)
         returns (bool)
     {
         Image storage image = imageStorage[_tokenID];
@@ -106,11 +102,6 @@ contract ImageNFT is ERC721URIStorage {
             return true;
         }
         return false;
-    }
-
-    // Following functions are for external use
-    function getCurrentTime() external view returns (uint256) {
-        return block.timestamp;
     }
 
     function getTokenOnwer(uint256 _tokenID) external view returns (address) {

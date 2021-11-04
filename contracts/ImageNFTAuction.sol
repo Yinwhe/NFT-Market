@@ -17,14 +17,10 @@ contract ImageAuction is ImageNFT {
     mapping(uint256 => Auction) public auctions;
     mapping(uint256 => mapping(address => uint256)) internal bidInfo;
 
-    uint256 currentAuctionID;
-
-    constructor() {
-        currentAuctionID = 0;
-    }
+    constructor() {}
 
     modifier notOnBid(uint256 _tokenID) {
-        require(!imageStorage[_tokenID].onBid, "Already on auction.");
+        require(imageStorage[_tokenID].status == Status.OffBid, "Already on auction.");
         _;
     }
 
@@ -33,10 +29,9 @@ contract ImageAuction is ImageNFT {
         uint256 _minBid,
         uint256 _duration
     ) external notOnBid(_tokenID) returns (bool success) {
-        updateStatus(_tokenID, true);
+        updateStatus(_tokenID, Status.OnBid);
         updatePrice(_tokenID, _minBid);
 
-        currentAuctionID++;
         uint256 _endTime = block.timestamp + _duration;
 
         Auction memory newAuction = Auction(
@@ -49,8 +44,7 @@ contract ImageAuction is ImageNFT {
             false
         );
 
-        approve(address(this), _tokenID);
-        auctions[currentAuctionID] = newAuction;
+        auctions[_tokenID] = newAuction;
         return true;
     }
 
@@ -60,7 +54,7 @@ contract ImageAuction is ImageNFT {
     {
         Auction storage auction = auctions[auctionID];
         require(!auction.ended, "Auction already ended.");
-        require(newBid > auction.highestBid, "Lower bid, kidding.");
+        require(newBid > auction.highestBid, "Lower bid? Joking.");
 
         updatePrice(auction.imageID, newBid);
 
@@ -74,7 +68,9 @@ contract ImageAuction is ImageNFT {
     function endAuction(uint256 auctionID) external returns (bool success) {
         Auction storage auction = auctions[auctionID];
         require(block.timestamp >= auction.endTime, "Not end time.");
+        require(!auction.ended, "Already Ended.");
 
+        updateStatus(auctionID, Status.WaittingClaim);
         auction.ended = true;
         return true;
     }
