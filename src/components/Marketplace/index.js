@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Typography, Grid, Paper, styled } from '@mui/material';
-import ImageCard from "../MintedImages/ImageCard";
+import React from "react";
+import { Typography, Stack, Paper, styled } from '@mui/material';
+import ImageCard from "../ImageCard/ImageCard";
 
 const Item = styled(Paper)(({ theme }) => ({
   ...theme.typography.body2,
@@ -26,25 +26,22 @@ const Marketplace = ({
       <Typography gutterBottom variant="h4">
         Total number of Images in the Marketplace : {ImageCount}
       </Typography>
-      <Grid container spacing={2}>
+      <Stack elevation={12} spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} >
         {allImages.map((image) => {
-          console.log("=== Test ===", image, Auctions[parseInt(image.tokenID) - 1])
           return (
-            <Grid item xs key={image.tokenID}>
-              <Item>
-                <ImageCard
-                  tokenID={image.tokenID}
-                  image={image}
-                  accountAddress={accountAddress}
-                  Contract={Contract}
-                  Auction={Auctions[parseInt(image.tokenID) - 1]}
-                  currentTime={currentTime}
-                />
-              </Item>
-            </Grid>
+            <Item key={image.tokenID}>
+              <ImageCard
+                tokenID={image.tokenID}
+                image={image}
+                accountAddress={accountAddress}
+                Contract={Contract}
+                Auction={Auctions[parseInt(image.tokenID) - 1]}
+                currentTime={currentTime}
+              />
+            </Item>
           );
         })}
-      </Grid>
+      </Stack>
     </div>
   );
 };

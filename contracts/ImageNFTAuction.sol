@@ -20,7 +20,10 @@ contract ImageAuction is ImageNFT {
     constructor() {}
 
     modifier notOnBid(uint256 _tokenID) {
-        require(imageStorage[_tokenID].status == Status.OffBid, "Already on auction.");
+        require(
+            imageStorage[_tokenID].status == Status.OffBid,
+            "Already on auction."
+        );
         _;
     }
 
@@ -29,6 +32,11 @@ contract ImageAuction is ImageNFT {
         uint256 _minBid,
         uint256 _duration
     ) external notOnBid(_tokenID) returns (bool success) {
+        require(
+            ownerOf(_tokenID) == msg.sender,
+            "Only Owner Can Begin a Auction."
+        );
+
         updateStatus(_tokenID, Status.OnBid);
         updatePrice(_tokenID, _minBid);
 
@@ -66,11 +74,16 @@ contract ImageAuction is ImageNFT {
     }
 
     function endAuction(uint256 auctionID) external returns (bool success) {
+        require(
+            ownerOf(auctionID) == msg.sender,
+            "Only Owner Can End a Auction."
+        );
+
         Auction storage auction = auctions[auctionID];
         require(block.timestamp >= auction.endTime, "Not end time.");
         require(!auction.ended, "Already Ended.");
 
-        updateStatus(auctionID, Status.WaittingClaim);
+        updateStatus(auction.imageID, Status.WaittingClaim);
         auction.ended = true;
         return true;
     }
@@ -81,10 +94,10 @@ contract ImageAuction is ImageNFT {
         require(auction.ended, "Auction not ended yet.");
         require(!auction.claimed, "Auction already claimed.");
         require(auction.winner == msg.sender, "Can only be claimed by winner.");
-        require(msg.value >= auction.highestBid, "ETH not enough.");
 
         address owner = ownerOf(auction.imageID);
-        payable(owner).transfer(auction.highestBid);
+        payable(owner).transfer(msg.value);
         updateOwner(auction.imageID, msg.sender);
+        updateStatus(auction.imageID, Status.OffBid);
     }
 }

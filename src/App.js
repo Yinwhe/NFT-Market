@@ -25,7 +25,6 @@ class App extends Component {
 			Auctions: [],
 			currentTime: null,
 		};
-		this.setState({ready: false});
 	}
 
 	setupWeb3 = async () => {
@@ -121,9 +120,10 @@ class App extends Component {
 	}
 
 	componentWillMount = async () => {
+		// this.setState({ready: false});
 		await this.setupWeb3();
 		await this.setupBlockchain();
-		this.setState({ ready: true })
+		// this.setState({ready: true })
 	}
 
 	componentDidMount = async () => {
@@ -213,10 +213,9 @@ class App extends Component {
 	}
 
 	render() {
-		console.log("Ready", this.ready);
 		return (
-			<div>
-				{!this.ready ?
+			<div className={styles.App}>
+				{this.ready ?
 					<Loader />
 					: (
 						<HashRouter basename="/">

@@ -37,7 +37,6 @@ export default class Mint extends Component {
 
 	onSubmit = async (event) => {
 		event.preventDefault();
-		console.log("Test");
 
 		await ipfs.files.add(this.state.buffer, (error, result) => {
 			// In case of fail to upload to IPFS
