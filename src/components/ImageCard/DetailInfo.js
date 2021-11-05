@@ -6,7 +6,8 @@ import {
 
 export default function DetailInfo({
   image,
-  auction
+  auction,
+  ownerShipTrans
 }) {
   const [open, setOpen] = React.useState(false);
 
@@ -37,37 +38,46 @@ export default function DetailInfo({
         open={open}
         onClose={handleClose}
       >
-        <DialogTitle>
-          <Typography align="center" gutterBottom variant="h4">
-            Detail Info
-          </Typography>
-        </DialogTitle>
         <DialogContent>
           <Grid item xs container direction="column">
             <Grid item>
               <Img alt="NFT Images" src={image.tokenURI} />
             </Grid>
             <Grid item>
-              <Typography gutterBottom variant="h4" component="div">
-                Name: {image.tokenName}
+              <Typography variant="h5">
+                Detail Info
               </Typography>
             </Grid>
             <Grid item>
               <Typography variant="body2" color="text.secondary">
+                Name: {image.tokenName}
+                <br />
                 Highest Auction Price: {window.web3.utils.fromWei(`${image.highestBidPrice}`, 'ether')} ETH
                 <br />
                 Minted By: {image.mintedBy}
                 <br />
                 Owner: {image.currentOwner}
+                <br /><br />
               </Typography>
+            </Grid>
+            <Grid item>
+              <Typography variant="h5">
+                Ownership Path
+              </Typography>
+              {ownerShipTrans.map((address) => {
+                return (
+                  <Typography variant="body2" color="text.secondary" key={address}>{address} -&gt;</Typography>
+                );
+              })}
+              <Typography variant="body2" color="text.secondary">(Current)<br /><br /></Typography>
             </Grid>
             {onBid || toBeClaim ?
               <Grid item>
                 {onBid ?
-                  <Typography variant="h4" component="div">
+                  <Typography variant="h5">
                     On Auction
                   </Typography>
-                  : <Typography variant="h4" component="div">
+                  : <Typography variant="h5">
                     To Be Claimed
                   </Typography>
                 }
@@ -77,6 +87,7 @@ export default function DetailInfo({
                   Current Bid: {window.web3.utils.fromWei(`${auction.highestBid}`, 'ether')} ETH
                   <br />
                   Current Winner: {auction.winner}
+                  <br /><br />
                 </Typography>
               </Grid>
               : <div />

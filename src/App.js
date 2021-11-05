@@ -24,6 +24,7 @@ class App extends Component {
 			lastMintTime: null,
 			Auctions: [],
 			currentTime: null,
+			ready: false,
 		};
 	}
 
@@ -97,12 +98,8 @@ class App extends Component {
 					ImageCount: ImageCount,
 					ImageNumOfAccount: ImageNumOfAccount,
 				});
-			}
-			else {
-				alert(
-					'Failed to connect to a smart contact.'
-				)
-			}
+				this.setState({ready:true})
+			} else throw('Failed to connect to a smart contact.');
 		} catch (error) {
 			// Catch any errors for any of the above operations.
 			alert(
@@ -120,10 +117,9 @@ class App extends Component {
 	}
 
 	componentWillMount = async () => {
-		// this.setState({ready: false});
-		await this.setupWeb3();
-		await this.setupBlockchain();
-		// this.setState({ready: true })
+		this.setState({ready: false});
+		this.setupWeb3();
+		this.setupBlockchain();
 	}
 
 	componentDidMount = async () => {
@@ -135,30 +131,6 @@ class App extends Component {
 
 	componentWillUnmount() {
 		clearInterval(this.timerID);
-	}
-
-	renderLoader() {
-		return (
-			<div className={styles.loader}>
-				<Loader size="80px" color="red" />
-				<h3> Loading Web3, accounts, and contract...</h3>
-				<p> Unlock your metamask </p>
-			</div>
-		);
-	}
-
-	renderDeployCheck(instructionsKey) {
-		return (
-			<div className={styles.setup}>
-				<div className={styles.notice}>
-					Your <b> contracts are not deployed</b> in this network. Two potential reasons: <br />
-					<p>
-						Maybe you are in the wrong network? Point Metamask to localhost.<br />
-						You contract is not deployed. Follow the instructions below.
-					</p>
-				</div>
-			</div>
-		);
 	}
 
 	renderHome = () => {
@@ -215,7 +187,7 @@ class App extends Component {
 	render() {
 		return (
 			<div className={styles.App}>
-				{this.ready ?
+				{!this.state.ready ?
 					<Loader />
 					: (
 						<HashRouter basename="/">

@@ -2,30 +2,45 @@ import React from 'react';
 import {
   Button, Typography, Grid, Box
 } from '@mui/material';
+import Loader from '../Loader';
 import DetailInfo from './DetailInfo';
 
 export default class ImageCard extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      ownerShipTrans: [],
+      ready: false
+    }
+  }
+
+  componentWillMount = async() => {
+    this.setState({ready: false});
+    const image = this.props.image;
+    let ownerShipTrans = [];
+    for (let i = 0; i < image.transferTime; i++) {
+      let address = await this.props.Contract.methods.ownerShipTrans(image.tokenID, i).call();
+      ownerShipTrans.push(address);
+    }
+    this.setState({ ownerShipTrans: ownerShipTrans })
+    this.setState({ready: true});
   }
 
   render() {
     let image = this.props.image;
     let auction = this.props.Auction;
-    // console.log("=== Test ===", image, auction);
-
     let isOwner = (this.props.image.currentOwner === this.props.accountAddress);
     let leftTime = auction.endTime - this.props.currentTime;
-
     let status = image.status == 0 ? "Off Auction" : image.status == 1 ? "On Auction" : "Waitting to be Claimed";
 
-    return (
+    return ( !this.state.ready ? <Loader /> :
       <Box width={700}>
         <Grid container spacing={2}>
           <Grid item>
             <DetailInfo
               image={image}
               auction={auction}
+              ownerShipTrans={this.state.ownerShipTrans}
             />
           </Grid>
           <Grid item xs={12} sm container>
@@ -64,10 +79,6 @@ export default class ImageCard extends React.Component {
     );
   }
 
-
-  ///---------------------------------------------------------
-  /// Functions put a photo NFT on bid or cancel it 
-  ///---------------------------------------------------------
   putOnBid = async () => {
     let tokenID = this.props.tokenID;
     console.log("=== tokenID ===", tokenID);
@@ -76,6 +87,7 @@ export default class ImageCard extends React.Component {
 
     // /// Put on sale (by a seller who is also called as owner)
     await this.props.Contract.methods.beginAuction(tokenID, minBid, duration).send({ from: this.props.accountAddress });
+    window.location.reload(true);
   }
 
   endOnBid = async () => {
@@ -83,6 +95,7 @@ export default class ImageCard extends React.Component {
     console.log("=== tokenID ===", tokenID);
 
     await this.props.Contract.methods.endAuction(tokenID).send({ from: this.props.accountAddress });
+    window.location.reload(true);
   }
 
   bid = async () => {
@@ -95,6 +108,7 @@ export default class ImageCard extends React.Component {
       return;
     }
     await this.props.Contract.methods.bid(tokenID, newBid).send({ from: this.props.accountAddress });
+    window.location.reload(true);
   }
 
   claim = async () => {
@@ -107,5 +121,6 @@ export default class ImageCard extends React.Component {
     }
 
     await this.props.Contract.methods.claim(tokenID).send({ from: this.props.accountAddress });
+    window.location.reload(true);
   }
 }

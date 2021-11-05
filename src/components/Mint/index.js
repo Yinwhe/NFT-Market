@@ -56,6 +56,7 @@ export default class Mint extends Component {
 			this.props.Contract.methods.mintImageNFT(this.state.NFTName, this.state.ipfsHash).send({ from: this.props.accountAddress });
 			console.log("=== Mint ===", this.state.NFTName);
 		})
+		window.location.reload(true);
 	}
 
 	render() {

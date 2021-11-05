@@ -12,17 +12,18 @@ contract ImageNFT is ERC721URIStorage {
         uint256 tokenID;
         string tokenName;
         string tokenURI;
-        address payable mintedBy;
-        address payable currentOwner;
-        address payable previousOwner;
+        address mintedBy;
+        address currentOwner;
+        uint256 transferTime;
         uint256 highestBidPrice;
-        uint256 transNum;
         Status status;
     }
 
     uint256 public currentImageCount;
 
     mapping(uint256 => Image) public imageStorage;
+
+    mapping(uint256 => address[]) public ownerShipTrans;
 
     mapping(string => bool) internal tokenURIExists;
 
@@ -47,9 +48,8 @@ contract ImageNFT is ERC721URIStorage {
             currentImageCount,
             _name,
             _tokenURI,
-            payable(msg.sender),
-            payable(msg.sender),
-            payable(address(0)),
+            msg.sender,
+            msg.sender,
             0,
             0,
             Status.OffBid
@@ -84,9 +84,9 @@ contract ImageNFT is ERC721URIStorage {
         returns (bool)
     {
         Image storage image = imageStorage[_tokenID];
-        image.previousOwner = image.currentOwner;
-        image.currentOwner = payable(newOwner);
-        image.transNum += 1;
+        ownerShipTrans[_tokenID].push(image.currentOwner);
+        image.currentOwner = newOwner;
+        image.transferTime += 1;
 
         _transfer(ownerOf(_tokenID), newOwner, _tokenID);
         return true;
