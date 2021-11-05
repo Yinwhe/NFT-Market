@@ -1,6 +1,7 @@
 import React from 'react';
 import {
-  Button, Typography, Grid, Box
+  Button, Typography, Grid, Box, TextField,
+  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle
 } from '@mui/material';
 import Loader from '../Loader';
 import DetailInfo from './DetailInfo';
@@ -10,6 +11,9 @@ export default class ImageCard extends React.Component {
     super(props);
     this.state = {
       ownerShipTrans: [],
+      minBid: 0,
+      duration: 0,
+      newBid: 0,
       ready: false
     }
   }
@@ -23,7 +27,7 @@ export default class ImageCard extends React.Component {
       ownerShipTrans.push(address);
     }
     this.setState({ ownerShipTrans: ownerShipTrans })
-    this.setState({ready: true});
+    this.setState({ ready: true });
   }
 
   render() {
@@ -34,7 +38,7 @@ export default class ImageCard extends React.Component {
     let status = image.status == 0 ? "Off Auction" : image.status == 1 ? "On Auction" : "Waitting to be Claimed";
 
     return ( !this.state.ready ? <Loader /> :
-      <Box width={700}>
+      <Box width={800}>
         <Grid container spacing={2}>
           <Grid item>
             <DetailInfo
@@ -47,24 +51,30 @@ export default class ImageCard extends React.Component {
             <Grid item xs container direction="column">
               <Grid item xs={2}>
                 <br />
-                <Typography gutterBottom variant="h5" component="div">
+                <Typography gutterBottom variant="h5">
+                  Token ID: {image.tokenID}
+                </Typography>
+              </Grid>
+              <Grid item xs={2}>
+                <br />
+                <Typography gutterBottom variant="h6" component="div">
                   Image Name: {image.tokenName}
                 </Typography>
               </Grid>
               <Grid item>
-                <Typography gutterBottom variant="h5" component="div">
+                <Typography gutterBottom variant="h6" component="div">
                   Status: {status}
                 </Typography>
               </Grid>
               <Grid item>
                 {/* For Button */}
                 {image.status == 0 ? // Hard to read I guess
-                  <Button onClick={this.putOnBid}> Put on Bid </Button>
+                <DPut info={this} />
                   : image.status == 1 ?
                     leftTime > 0 ?
                       isOwner ?
                         <Button>Your Auction Will End in {leftTime}s</Button>
-                        : <Button onClick={this.bid}>Ending in {leftTime}s, Bid Now!!!</Button>
+                        : <DBid info={this} leftTime={leftTime} />
                       : isOwner ?
                         <Button onClick={this.endOnBid}>You Can End It Now</Button>
                         : <Button>Time Up, Waitting for owner to end it.</Button>
@@ -82,11 +92,9 @@ export default class ImageCard extends React.Component {
   putOnBid = async () => {
     let tokenID = this.props.tokenID;
     console.log("=== tokenID ===", tokenID);
-    let minBid = prompt("Please input minBid");
-    let duration = prompt("Please input duration");
 
-    // /// Put on sale (by a seller who is also called as owner)
-    await this.props.Contract.methods.beginAuction(tokenID, minBid, duration).send({ from: this.props.accountAddress });
+    /// Put on sale (by a seller who is also called as owner)
+    await this.props.Contract.methods.beginAuction(tokenID, this.state.minBid, this.state.duration).send({ from: this.props.accountAddress });
     window.location.reload(true);
   }
 
@@ -101,13 +109,12 @@ export default class ImageCard extends React.Component {
   bid = async () => {
     let tokenID = this.props.tokenID;
     let auction = this.props.Auction;
-    let newBid = prompt("Please input your bid");
 
-    if (newBid <= auction.highestBidPrice) {
+    if (this.state.newBid <= auction.highestBidPrice) {
       window.alert("Lower bid? Joking!");
       return;
     }
-    await this.props.Contract.methods.bid(tokenID, newBid).send({ from: this.props.accountAddress });
+    await this.props.Contract.methods.bid(tokenID, this.state.newBid).send({ from: this.props.accountAddress });
     window.location.reload(true);
   }
 
@@ -123,4 +130,101 @@ export default class ImageCard extends React.Component {
     await this.props.Contract.methods.claim(tokenID).send({ from: this.props.accountAddress });
     window.location.reload(true);
   }
+}
+
+function DPut({
+  info
+}) {
+  const [open, setOpen] = React.useState(false);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  return (
+    <div>
+      <Button variant="outlined" onClick={handleClickOpen}>
+        Put On Bid
+      </Button>
+      <Dialog open={open} onClose={handleClose}>
+        <form onSubmit={info.putOnBid}>
+        <DialogTitle>Put On Bid</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Please filling the following info to start your auction
+          </DialogContentText>
+          <TextField
+            label="Starting Bid"
+            type="number"
+            width={100}
+            variant="standard"
+            required
+            onChange={(e) => info.setState({minbid: e.target.value})}
+          /><br />
+          <TextField
+            label="Durations"
+            type="number"
+            width={100}
+            variant="standard"
+            required
+            onChange={(e) => info.setState({duration: e.target.value})}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button type="submit">Start</Button>
+        </DialogActions>
+        </form>
+      </Dialog>
+    </div>
+  );
+}
+
+function DBid({
+  info,
+  leftTime
+}) {
+  const [open, setOpen] = React.useState(false);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  return (
+    <div>
+      <Button variant="outlined" onClick={handleClickOpen}>
+        Auction Ending in {leftTime}s, Bid!!!
+      </Button>
+      <Dialog open={open} onClose={handleClose}>
+        <form onSubmit={info.bid}>
+        <DialogTitle>Put On Bid</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Please filling your bid
+          </DialogContentText>
+          <TextField
+            label="Your Bid"
+            type="number"
+            width={100}
+            variant="standard"
+            required
+            onChange={(e) => info.setState({newBid: e.target.value})}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button type="submit">Bid</Button>
+        </DialogActions>
+        </form>
+      </Dialog>
+    </div>
+  );
 }

@@ -21,11 +21,10 @@ const MintedImages = ({
     (image) => image.currentOwner === accountAddress
   );
   return (
-    <div>
-      <br />
-      <Typography gutterBottom variant="h4">
+    <div><br />
+      <h2>
         Total number of NFTs You Own : {ImageNumOfAccount}
-      </Typography>
+      </h2><hr /><br />
       <Stack elevation={12} spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} >
         {myImages.map((image) => {
           return (

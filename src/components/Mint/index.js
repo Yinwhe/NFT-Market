@@ -1,11 +1,11 @@
 import React, { Component } from "react";
 import { Button, Card, Box, TextField } from '@mui/material';
+import {create} from 'ipfs-http-client';
 
-const IPFS = require('ipfs-api');
-const ipfs = new IPFS({
-	host: 'ipfs.infura.io',
-	port: 5001,
-	protocol: 'https'
+const ipfs = create({
+    host: "ipfs.infura.io",
+    port: 5001,
+    protocol: "https",
 });
 
 export default class Mint extends Component {
@@ -37,36 +37,27 @@ export default class Mint extends Component {
 
 	onSubmit = async (event) => {
 		event.preventDefault();
+		
+		let result = await ipfs.add(this.state.buffer);
+		// In case of successful to upload to IPFS
+		this.setState({ ipfsHash: result.path });
+		console.log('=== ipfsHash ===', this.state.ipfsHash);
 
-		await ipfs.files.add(this.state.buffer, (error, result) => {
-			// In case of fail to upload to IPFS
-			if (error) {
-				console.error(error)
-				return
-			}
+		let tokenURI = `https://ipfs.infura.io/ipfs/${this.state.ipfsHash}`;
+		this.setState({ tokenURI });
+		console.log('=== tokenURI ===', tokenURI);
 
-			// In case of successful to upload to IPFS
-			this.setState({ ipfsHash: result[0].hash });
-			console.log('=== ipfsHash ===', this.state.ipfsHash);
-
-			let tokenURI = `https://ipfs.infura.io/ipfs/${this.state.ipfsHash}`;
-			this.setState({ tokenURI });
-			console.log('=== tokenURI ===', tokenURI);
-
-			this.props.Contract.methods.mintImageNFT(this.state.NFTName, this.state.ipfsHash).send({ from: this.props.accountAddress });
-			console.log("=== Mint ===", this.state.NFTName);
-		})
+		await this.props.Contract.methods.mintImageNFT(this.state.NFTName, this.state.ipfsHash).send({ from: this.props.accountAddress });
+		console.log("=== Mint ===", this.state.NFTName);
 		window.location.reload(true);
 	}
 
 	render() {
 		return (
-			<div>
-				<br /><br /><br />
+			<div><br />
 				<Card>
-					<br />
 					<div className="jumbotron">
-						<h1 className="display-5">Mint Your NFT</h1>
+						<h2>Mint Your Image</h2>
 					</div>
 					<form onSubmit={this.onSubmit}>
 						<Box>
@@ -75,7 +66,7 @@ export default class Mint extends Component {
 								type="text"
 								value={this.state.NFTName}
 								label="NFT's Name"
-								sx={{ m: 4, width: '30ch' }}
+								sx={{ m: 3, width: '35ch' }}
 								onChange={(e) =>
 									this.setState({ NFTName: e.target.value })
 								}
@@ -86,13 +77,13 @@ export default class Mint extends Component {
 								required
 								accept="image/*"
 								type="file"
-								sx={{ m: 4, width: '30ch' }}
+								sx={{ m: 3, width: '35ch' }}
 								onChange={this.captureFile} />
 						</Box>
 						<Box>
 							<Button
 								variant="contained"
-								sx={{ m: 1, width: '30ch' }}
+								sx={{ m: 3, width: '35ch' }}
 								type='submit'>
 								Mint It!
 							</Button>

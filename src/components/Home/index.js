@@ -1,18 +1,19 @@
 import React from 'react';
+import {Card, Box} from '@mui/material';
 
 const Home = ({ accountAddress, accountBalance }) => {
 	return (
 		<div>
-			<div className="jumbotron">
-				<h1 className="display-5">NFT-Market</h1>
-				<p className="lead">
-					This is an NFT Auction Platform where you can mint ERC721 implemented <i>NFTs</i> and deal with them.
-				</p>
-				<hr className="my-4" />
-				<p className="lead">Account Address :</p>
-				<h4>{accountAddress}</h4>
-				<p className="lead">Account Balance :</p>
-				<h4>{accountBalance} ETH</h4>
+			<div><br />
+				<h1>NFT-Market</h1>
+				<p >An NFT Marketplace based on ERC721 where you can mint/sell/bid Images</p>
+				<hr /><br />
+				<Card><Box width={800}><br />
+					<p >Account Address :</p>
+					<h4>{accountAddress}</h4>
+					<p>Account Balance :</p>
+					<h4>{accountBalance} ETH</h4>
+				<br /></Box></Card>
 			</div>
 		</div>
 	);

@@ -31,7 +31,7 @@ export default function DetailInfo({
 
   return (
     <div>
-      <ButtonBase onClick={handleClickOpen} sx={{ width: 328, height: 256 }}>
+      <ButtonBase onClick={handleClickOpen} sx={{ width: 328, height: 226 }}>
         <Img alt="NFT Images" src={image.tokenURI} />
       </ButtonBase>
       <Dialog
@@ -64,9 +64,9 @@ export default function DetailInfo({
               <Typography variant="h5">
                 Ownership Path
               </Typography>
-              {ownerShipTrans.map((address) => {
+              {ownerShipTrans.map((address, index) => {
                 return (
-                  <Typography variant="body2" color="text.secondary" key={address}>{address} -&gt;</Typography>
+                  <Typography variant="body2" color="text.secondary" key={index}>{address} -&gt;</Typography>
                 );
               })}
               <Typography variant="body2" color="text.secondary">(Current)<br /><br /></Typography>
@@ -74,10 +74,10 @@ export default function DetailInfo({
             {onBid || toBeClaim ?
               <Grid item>
                 {onBid ?
-                  <Typography variant="h5">
+                  <Typography variant="h5" color="red">
                     On Auction
                   </Typography>
-                  : <Typography variant="h5">
+                  : <Typography variant="h5" color="green">
                     To Be Claimed
                   </Typography>
                 }
